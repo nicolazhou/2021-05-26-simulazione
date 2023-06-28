@@ -5,8 +5,10 @@
 package it.polito.tdp.yelp;
 
 import java.net.URL;
+import java.util.List;
 import java.util.ResourceBundle;
 
+import it.polito.tdp.yelp.model.Business;
 import it.polito.tdp.yelp.model.Model;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -35,16 +37,16 @@ public class FXMLController {
     private Button btnPercorso; // Value injected by FXMLLoader
 
     @FXML // fx:id="cmbCitta"
-    private ComboBox<?> cmbCitta; // Value injected by FXMLLoader
+    private ComboBox<String> cmbCitta; // Value injected by FXMLLoader
 
     @FXML // fx:id="txtX"
     private TextField txtX; // Value injected by FXMLLoader
 
     @FXML // fx:id="cmbAnno"
-    private ComboBox<?> cmbAnno; // Value injected by FXMLLoader
+    private ComboBox<Integer> cmbAnno; // Value injected by FXMLLoader
 
     @FXML // fx:id="cmbLocale"
-    private ComboBox<?> cmbLocale; // Value injected by FXMLLoader
+    private ComboBox<Business> cmbLocale; // Value injected by FXMLLoader
 
     @FXML // fx:id="txtResult"
     private TextArea txtResult; // Value injected by FXMLLoader
@@ -52,16 +54,102 @@ public class FXMLController {
     @FXML
     void doCalcolaPercorso(ActionEvent event) {
     	
+    	this.txtResult.clear();
+    	
+    	if(!this.model.isGrafoLoaded()) {
+    		this.txtResult.setText("Crea grafo prima!");
+    		return;
+    	}
+    	
+    	Business business = this.cmbLocale.getValue();
+    	
+    	if(business == null) {
+    		this.txtResult.setText("Scegli un locale!");
+    		return;
+    	}
+    	
+    	String input = this.txtX.getText();
+    	
+    	Double x = 0.0;
+    	
+    	try {
+    		
+    		x = Double.parseDouble(input);
+    		
+    	} catch(NumberFormatException e) {
+    		this.txtResult.setText("Inserisci un valore numerico a x!");
+    		return;
+    	}
+    	
+    	
+    	if(x < 0 || x > 1) {
+    		this.txtResult.setText("Inserisci un numero compreso tra 0 e 1!");
+    		return;
+    	}
+    	
+    	List<Business> percorso = this.model.trovaPercorso(business, x);
+    	
+    	this.txtResult.appendText("PERCORSO: \n");
+    	
+    	for(Business b : percorso) {
+    		
+    		this.txtResult.appendText(b + "\n");
+    		
+    	}
+    	
+    	
+    	
     }
 
     @FXML
     void doCreaGrafo(ActionEvent event) {
+    	
+    	this.txtResult.clear();
+    	
+    	String city = this.cmbCitta.getValue();
+    	
+    	if(city == null) {
+    		this.txtResult.setText("Scegli una città!");
+    		return;
+    	}
+    	
+    	Integer anno = this.cmbAnno.getValue();
+    	
+    	if(anno == null) {
+    		this.txtResult.setText("Scegli un anno!");
+    		return;
+    	}
+    	
+    	this.model.buildGraph(city, anno);
+    	
+    	this.txtResult.appendText("Grafo creato! \n");
+    	this.txtResult.appendText("# Vertici: " + this.model.getNVertici() + "\n");
+    	this.txtResult.appendText("# Archi: " + this.model.getNArchi() + "\n");
+    	
+    	this.cmbLocale.getItems().addAll(this.model.getVertici());
+    	
 
     }
 
     @FXML
     void doLocaleMigliore(ActionEvent event) {
 
+    	this.txtResult.clear();
+    	
+    	if(!this.model.isGrafoLoaded()) {
+    		this.txtResult.setText("Crea grafo prima!");
+    		return;
+    	}
+    	
+    	Business best = this.model.getBestBusiness();
+    	
+    	if(best == null) {
+    		this.txtResult.setText("Non ci sono locali migliori!");
+    		return;
+    	}
+    	
+    	this.txtResult.appendText("LOCALE MIGLIORE: " + best.getBusinessName());
+    	
     }
 
     @FXML // This method is called by the FXMLLoader when initialization is complete
@@ -78,5 +166,13 @@ public class FXMLController {
     
     public void setModel(Model model) {
     	this.model = model;
+    	
+    	this.cmbCitta.getItems().addAll(this.model.getCities());
+    	
+    	for(int i = 2005; i <= 2013; i++) {
+    		this.cmbAnno.getItems().add(i);
+    	}
+    	
+    	
     }
 }
